@@ -2,10 +2,10 @@ import React, { useEffect, useMemo, useState } from "react";
 
 /**
  * Music News 24h App (MVP)
- * 
+ *
  * This is a front-end UI that expects a backend endpoint:
  *   GET /api/news?hours=24
- * 
+ *
  * Response shape (example):
  * {
  *   generatedAt: "2026-02-23T06:00:00.000Z",
@@ -114,11 +114,15 @@ export default function MusicNews24hApp() {
       <div className="mx-auto max-w-6xl px-4 py-6">
         <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Music News (Last {hours}h)</h1>
+            <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">
+              Music News (Last {hours}h)
+            </h1>
             <p className="text-zinc-400 mt-1">
               {data?.generatedAt ? (
                 <>
-                  Updated: <span className="text-zinc-300">{fmtLocal(data.generatedAt)}</span> · Total: <span className="text-zinc-300">{totalCount}</span>
+                  Updated:{" "}
+                  <span className="text-zinc-300">{fmtLocal(data.generatedAt)}</span> ·
+                  Total: <span className="text-zinc-300">{totalCount}</span>
                 </>
               ) : (
                 <>Fetching headlines…</>
@@ -160,20 +164,28 @@ export default function MusicNews24hApp() {
               onChange={(e) => setQ(e.target.value)}
             />
             <label className="flex items-center gap-2 text-sm text-zinc-300 select-none">
-              <input type="checkbox" checked={hideEmpty} onChange={(e) => setHideEmpty(e.target.checked)} />
+              <input
+                type="checkbox"
+                checked={hideEmpty}
+                onChange={(e) => setHideEmpty(e.target.checked)}
+              />
               Hide empty genres
             </label>
           </div>
 
           {error ? (
-            <div className="text-sm text-red-300 bg-red-950/40 border border-red-900 rounded-xl px-3 py-2">Error: {error}</div>
+            <div className="text-sm text-red-300 bg-red-950/40 border border-red-900 rounded-xl px-3 py-2">
+              Error: {error}
+            </div>
           ) : null}
         </div>
 
         <div className="mt-6 grid grid-cols-1 md:grid-cols-12 gap-4">
           <aside className="md:col-span-4 lg:col-span-3">
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3">
-              <div className="text-xs uppercase tracking-wider text-zinc-400 px-2 pb-2">Genres</div>
+              <div className="text-xs uppercase tracking-wider text-zinc-400 px-2 pb-2">
+                Genres
+              </div>
               <div className="flex flex-col gap-1">
                 {genres
                   .filter((g) => !hideEmpty || (data?.genres?.[g]?.length ?? 0) > 0)
@@ -192,7 +204,9 @@ export default function MusicNews24hApp() {
                         }
                       >
                         <span className="font-medium">{g}</span>
-                        <span className={active ? "text-zinc-700" : "text-zinc-400"}>{count}</span>
+                        <span className={active ? "text-zinc-700" : "text-zinc-400"}>
+                          {count}
+                        </span>
                       </button>
                     );
                   })}
@@ -200,7 +214,8 @@ export default function MusicNews24hApp() {
             </div>
 
             <div className="mt-3 text-xs text-zinc-500">
-              Tip: add new feeds + keyword rules in the backend, then this UI will automatically show new genres.
+              Tip: add new feeds + keyword rules in the backend, then this UI will
+              automatically show new genres.
             </div>
           </aside>
 
@@ -227,15 +242,23 @@ export default function MusicNews24hApp() {
                       >
                         {it.titleJa ?? it.title}
                       </a>
-                      
+
+                      <div className="mt-1 text-sm text-zinc-400 flex flex-wrap gap-x-3 gap-y-1">
+                        <span>
+                          Source: <span className="text-zinc-300">{it.source}</span>
+                        </span>
+                        {it.publishedAt ? (
+                          <span>
+                            Published:{" "}
+                            <span className="text-zinc-300">{fmtLocal(it.publishedAt)}</span>
+                          </span>
+                        ) : null}
+                      </div>
+
                       {(it.summaryJa ?? it.summary) ? (
                         <p className="mt-2 text-sm text-zinc-300 leading-relaxed">
                           {it.summaryJa ?? it.summary}
                         </p>
-                      ) : null}
-                      </div>
-                      {it.summary ? (
-                        <p className="mt-2 text-sm text-zinc-300 leading-relaxed">{it.summary}</p>
                       ) : null}
                     </li>
                   ))
