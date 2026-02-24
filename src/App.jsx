@@ -225,15 +225,14 @@ export default function MusicNews24hApp() {
                         rel="noreferrer"
                         className="text-base font-medium hover:underline"
                       >
-                        {it.title}
+                        {it.titleJa ?? it.title}
                       </a>
-                      <div className="mt-1 text-sm text-zinc-400 flex flex-wrap gap-x-3 gap-y-1">
-                        <span>Source: <span className="text-zinc-300">{it.source}</span></span>
-                        {it.publishedAt ? (
-                          <span>
-                            Published: <span className="text-zinc-300">{fmtLocal(it.publishedAt)}</span>
-                          </span>
-                        ) : null}
+                      
+                      {(it.summaryJa ?? it.summary) ? (
+                        <p className="mt-2 text-sm text-zinc-300 leading-relaxed">
+                          {it.summaryJa ?? it.summary}
+                        </p>
+                      ) : null}
                       </div>
                       {it.summary ? (
                         <p className="mt-2 text-sm text-zinc-300 leading-relaxed">{it.summary}</p>
