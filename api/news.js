@@ -1,5 +1,46 @@
 import Parser from "rss-parser";
 
+const DEEPL_AUTH_KEY = process.env.DEEPL_AUTH_KEY;
+const DEEPL_API_BASE = process.env.DEEPL_API_BASE || "https://api-free.deepl.com"; // or https://api.deepl.com
+
+function looksEnglish(text = "") {
+  // 雑だけど音楽ニュース用途だと十分：英字比率で判定
+  const s = String(text);
+  const letters = (s.match(/[A-Za-z]/g) || []).length;
+  const nonSpace = (s.match(/\S/g) || []).length || 1;
+  return letters / nonSpace > 0.45;
+}
+
+const tlCache = new Map(); // {key: {t, v}}  簡易キャッシュ
+const TL_TTL_MS = 6 * 60 * 60 * 1000; // 6h
+
+async function deeplTranslateToJA(texts) {
+  if (!DEEPL_AUTH_KEY) return null;
+
+  // DeepL translate endpoint (/translate) :contentReference[oaicite:6]{index=6}
+  const url = `${DEEPL_API_BASE}/v2/translate`;
+  const body = new URLSearchParams();
+  for (const t of texts) body.append("text", t);
+  body.append("target_lang", "JA");
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "Authorization": `DeepL-Auth-Key ${DEEPL_AUTH_KEY}`, // auth方式 :contentReference[oaicite:7]{index=7}
+    },
+    body,
+  });
+
+  if (!res.ok) {
+    const msg = await res.text().catch(() => "");
+    throw new Error(`DeepL HTTP ${res.status}: ${msg.slice(0, 200)}`);
+  }
+
+  const json = await res.json();
+  return (json.translations || []).map((t) => t.text);
+}
+
 const parser = new Parser({
   timeout: 15000,
   headers: { "User-Agent": "music-news-24h/1.0 (+vercel)" },
@@ -72,6 +113,46 @@ export default async function handler(req, res) {
       }
     })
   );
+
+  // --- translate EN items (title + summary) ---
+try {
+  // 英語っぽい記事だけ対象。翻訳コスト対策で最大30件などに制限もアリ
+  const targets = allItems.filter((it) => looksEnglish(it.title));
+
+  // キャッシュを使って、未翻訳分だけDeepLへ
+  const now = Date.now();
+  const need = [];
+  const index = []; // targets上のどこに入れるか
+  for (let i = 0; i < targets.length; i++) {
+    const t = targets[i];
+    const key = `${t.title}|||${t.summary || ""}`;
+    const hit = tlCache.get(key);
+    if (hit && now - hit.t < TL_TTL_MS) {
+      t.titleJa = hit.v.titleJa;
+      t.summaryJa = hit.v.summaryJa;
+      continue;
+    }
+    index.push([i, key]);
+    // DeepLは text を複数渡せるので、2つずつ積む
+    need.push(t.title);
+    need.push((t.summary || "").slice(0, 400)); // 長すぎる要約はカット
+  }
+
+  if (need.length) {
+    const out = await deeplTranslateToJA(need);
+    for (let k = 0; k < index.length; k++) {
+      const [i, key] = index[k];
+      const titleJa = out[k * 2];
+      const summaryJa = out[k * 2 + 1] || null;
+      targets[i].titleJa = titleJa;
+      targets[i].summaryJa = summaryJa;
+      tlCache.set(key, { t: now, v: { titleJa, summaryJa } });
+    }
+  }
+} catch (e) {
+  // 翻訳が落ちてもニュース取得自体は返す（安全運用）
+  console.warn("translate failed:", e?.message || e);
+}
 
   allItems.sort((a, b) => (b.publishedAt || "").localeCompare(a.publishedAt || ""));
 
