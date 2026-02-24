@@ -1,23 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
 
-/**
- * Music News 24h App (MVP)
- *
- * This is a front-end UI that expects a backend endpoint:
- *   GET /api/news?hours=24
- *
- * Response shape (example):
- * {
- *   generatedAt: "2026-02-23T06:00:00.000Z",
- *   hours: 24,
- *   genres: {
- *     "Techno": [{ title, url, publishedAt, source }],
- *     "Hip-Hop": [...],
- *     "Other": [...]
- *   }
- * }
- */
-
 const DEFAULT_HOURS = 24;
 
 const GENRE_ORDER = [
@@ -86,7 +68,7 @@ export default function MusicNews24hApp() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       setData(json);
-      // Pick a sensible default genre when the data changes
+
       const keys = Object.keys(json?.genres ?? {});
       if (keys.length) {
         const preferred = GENRE_ORDER.find((k) => keys.includes(k)) ?? keys[0];
