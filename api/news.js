@@ -174,12 +174,21 @@ async function loadFeeds() {
         // blank = enabled 扱い / FALSE だけ無効
         return enabled !== "FALSE";
       })
-      .map((r) => ({
-        source: String(r.source ?? "").trim(),
-        url: String(r.url ?? "").trim(),
-        defaultGenre: String(r.defaultGenre ?? "Other").trim() || "Other",
-      }))
-      .filter((f) => f.source && f.url);
+        .map((r) => {
+           let rawUrl = String(r.url ?? "").trim();
+
+           // スキーム（http/https）が無ければ https:// を補う
+          if (rawUrl && !/^https?:\/\//i.test(rawUrl)) {
+            rawUrl = `https://${rawUrl}`;
+          }
+
+          return {
+            source: String(r.source ?? "").trim(),
+            url: rawUrl,
+            defaultGenre: String(r.defaultGenre ?? "Other").trim() || "Other",
+          };
+        })
+.filter((f) => f.source && f.url);
 
     feedsCache = { at: now, feeds: feeds.length ? feeds : FEEDS_FALLBACK };
     return feedsCache.feeds;
