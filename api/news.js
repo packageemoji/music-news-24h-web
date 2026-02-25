@@ -334,8 +334,9 @@ export default async function handler(req, res) {
       hours,
       feedCount: FEEDS.length,
       totalItems: deduped.length,
+      feedsLoaded: FEEDS, // ← 追加（確認用）
       genres,
-    });
+    });;
   } catch (e) {
     console.error("handler failed:", e?.message || e);
     res.status(500).json({
